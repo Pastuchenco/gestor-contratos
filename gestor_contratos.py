@@ -138,13 +138,17 @@ def formatar_data(data):
         except:
             return data
 
-# Tabela com ações
-st.markdown("<style>div[data-testid=column] button {margin-top: 5px;} .stDataFrame {width: 100% !important;}</style>", unsafe_allow_html=True)
+# Exibir contratos como tabela
+st.markdown("""
+<style>
+    .stButton>button {
+        white-space: nowrap;
+    }
+</style>
+""", unsafe_allow_html=True)
 
-# Exibir a tabela sem os botões nela
 st.dataframe(contratos_df)
 
-# Mostrar botões fora da tabela, alinhados corretamente
 for i, row in contratos_df.iterrows():
     col1, col2 = st.columns([10, 1])
     with col1:

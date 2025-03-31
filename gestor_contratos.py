@@ -42,7 +42,7 @@ if st.session_state.usuario_logado is None:
     st.title("🔐 Login - Gestor de Contratos")
     usuario = st.text_input("Usuário")
     senha = st.text_input("Senha", type="password")
-    if st.button("Entrar"):
+    if st.button("Entrar", key="entrar_btn"):
         if usuario in USUARIOS and USUARIOS[usuario] == senha:
             st.session_state.usuario_logado = usuario
             st.rerun()
@@ -71,7 +71,7 @@ nome = st.text_input("Nome do Contrato")
 data_venc = st.date_input("Data de Vencimento", format="YYYY-MM-DD")
 email = st.text_input("E-mail para notificação")
 
-if st.button("Salvar Contrato"):
+if st.button("Salvar Contrato", key="salvar_btn"):
     contratos_df = carregar_contratos()
     novo = pd.DataFrame([[nome, data_venc, email, 'Nao', None, '']], columns=contratos_df.columns)
     contratos_df = pd.concat([contratos_df, novo], ignore_index=True)
@@ -94,7 +94,7 @@ st.subheader("📋 Lista de Contratos")
 contratos_df = carregar_contratos()
 
 for i, row in contratos_df.iterrows():
-    st.markdown(f"**{row['Contrato']}** - Vencimento: {row['DataVencimento']} - Email: {row['Email']} - Renovado: {row['Renovado']} - Data Renovação: {row['DataRenovacao']}")
+    st.markdown(f"**{row['Contrato']}** - Vencimento: {row['DataVencimento']} - Email: {row['Email']} - Renovado: {row['Renovado']} - Data Renovação: {row['DataRenovacao']} - Renovado por: {row['RenovadoPor']}")
     col1, col2 = st.columns([1, 1])
     with col1:
         if row['Renovado'] == 'Nao':
@@ -122,7 +122,6 @@ for i, row in contratos_df.iterrows():
 st.dataframe(contratos_df)
 
 # Agendamento para envio de lembretes
-
 def verificar_lembretes():
     df = carregar_contratos()
     hoje = datetime.now().date()
@@ -147,14 +146,8 @@ def agendador():
 
 threading.Thread(target=agendador, daemon=True).start()
 
-# Botão de logout
+# Botão de logout (com chave única)
 st.markdown("---")
-if st.button("🔓 Sair", key="botao_sair"):
-    st.session_state.usuario_logado = None
-    st.rerun()
-
-# Botão de logout
-st.markdown("---")
-if st.button("🔓 Sair"):
+if st.button("🔓 Sair", key="logout_btn"):
     st.session_state.usuario_logado = None
     st.rerun()

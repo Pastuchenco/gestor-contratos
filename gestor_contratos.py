@@ -149,7 +149,7 @@ threading.Thread(target=agendador, daemon=True).start()
 
 # Botão de logout
 st.markdown("---")
-if st.button("🔓 Sair"):
+if st.button("🔓 Sair", key="botao_sair"):
     st.session_state.usuario_logado = None
     st.rerun()
 

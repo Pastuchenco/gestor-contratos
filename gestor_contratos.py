@@ -128,30 +128,19 @@ with st.expander("📤 Exportar Contratos"):
             with open("contratos_exportados.csv", "rb") as f:
                 st.download_button("📥 Baixar CSV", f, file_name="contratos.csv")
 
-# Corrigir formatação de data
-def formatar_data(data):
-    try:
-        return datetime.strptime(str(data), "%d/%m/%Y").strftime("%d/%m/%Y")
-    except:
-        try:
-            return datetime.strptime(str(data), "%Y-%m-%d").strftime("%d/%m/%Y")
-        except:
-            return data
-
-# Exibir contratos como tabela
-st.markdown("""
-<style>
-    .stButton>button {
-        white-space: nowrap;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-st.dataframe(contratos_df)
-
+# Exibir contratos um por um
 for i, row in contratos_df.iterrows():
-    col1, col2 = st.columns([10, 1])
+    col1, col2 = st.columns([9, 1])
     with col1:
+        st.markdown(f"""
+        **Contrato:** {row['Contrato']}  
+        **Vencimento:** {row['DataVencimento']}  
+        **Email:** {row['Email']}  
+        **Renovado:** {row['Renovado']}  
+        **Data Renovação:** {row['DataRenovacao'] if pd.notna(row['DataRenovacao']) else '---'}  
+        **Renovado por:** {row['RenovadoPor'] if pd.notna(row['RenovadoPor']) else '---'}  
+        """)
+    with col2:
         if row['Renovado'] == 'Nao':
             if st.button("✅ Renovar", key=f"renovar_{i}"):
                 contratos_df.at[i, 'Renovado'] = 'Sim'
@@ -169,13 +158,14 @@ for i, row in contratos_df.iterrows():
                 enviar_email(row['Email'], "[Gestor de Contratos] Renovação Concluída", html)
                 st.rerun()
 
-    with col2:
         if st.session_state.usuario_logado == 'juliano':
             if st.button("🗑️ Excluir", key=f"excluir_{i}"):
                 contratos_df = contratos_df.drop(index=i).reset_index(drop=True)
                 salvar_contratos(contratos_df)
                 st.warning("Contrato excluído.")
                 st.rerun()
+
+    st.markdown("---")
 
 # Agendamento para envio de lembretes
 def verificar_lembretes():

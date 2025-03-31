@@ -207,3 +207,4 @@ if st.button("🔓 Sair", key="logout_btn"):
     st.session_state.usuario_logado = None
     st.rerun()
 
+

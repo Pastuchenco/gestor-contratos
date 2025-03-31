@@ -115,6 +115,7 @@ for i, row in contratos_df.iterrows():
                 <h3>Contrato Renovado com Sucesso</h3>
                 <p><strong>Contrato:</strong> {row['Contrato']}</p>
                 <p><strong>Data de Vencimento:</strong> {row['DataVencimento']}</p>
+                <p><strong>Data da Renovação:</strong> {datetime.now().strftime('%d/%m/%Y')}</p>
                 <p>O contrato foi renovado no sistema Gestor de Contratos por <strong>{st.session_state.usuario_logado}</strong>.</p>
                 """
                 enviar_email(row['Email'], "[Gestor de Contratos] Renovação Concluída", html)
@@ -139,7 +140,7 @@ def verificar_lembretes():
                 html = f"""
                 <h3>Lembrete: Contrato prestes a vencer</h3>
                 <p><strong>Contrato:</strong> {row['Contrato']}</p>
-                <p><strong>Data de Vencimento:</strong> {row['DataVencimento']}</p>
+                <p><strong>Data de Vencimento:</strong> {data_venc.strftime('%d/%m/%Y')}</p>
                 <p>O prazo para vencimento deste contrato está se aproximando. Por favor, avalie a renovação.</p>
                 """
                 enviar_email(row['Email'], "[Gestor de Contratos] Alerta de Vencimento", html)

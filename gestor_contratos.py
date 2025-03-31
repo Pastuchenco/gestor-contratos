@@ -26,7 +26,8 @@ def enviar_email(destinatario, assunto, conteudo_html):
     msg.set_content("Este e-mail requer um cliente compatível com HTML.")
     msg.add_alternative(conteudo_html, subtype='html')
 
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+    with smtplib.SMTP('smtp.office365.com', 587) as smtp:
+        smtp.starttls()
         smtp.login(EMAIL_REMETENTE, SENHA_REMETENTE)
         smtp.send_message(msg)
 

@@ -74,19 +74,20 @@ def salvar_contratos(df):
 # Cadastro
 st.subheader("Cadastrar Novo Contrato")
 nome = st.text_input("Nome do Contrato")
-data_venc = st.date_input("Data de Vencimento", format="YYYY-MM-DD")
+data_venc = st.date_input("Data de Vencimento", format="DD/MM/YYYY")
 email = st.text_input("E-mail para notificação")
 
 if st.button("Salvar Contrato", key="salvar_btn"):
     contratos_df = carregar_contratos()
-    novo = pd.DataFrame([[nome, data_venc, email, 'Nao', None, '']], columns=contratos_df.columns)
+    data_venc_str = data_venc.strftime("%d/%m/%Y")
+    novo = pd.DataFrame([[nome, data_venc_str, email, 'Nao', None, '']], columns=contratos_df.columns)
     contratos_df = pd.concat([contratos_df, novo], ignore_index=True)
     salvar_contratos(contratos_df)
 
     html = f"""
     <h3>Contrato Cadastrado com Sucesso</h3>
     <p><strong>Contrato:</strong> {nome}</p>
-    <p><strong>Data de Vencimento:</strong> {data_venc}</p>
+    <p><strong>Data de Vencimento:</strong> {data_venc_str}</p>
     <p>Este contrato foi cadastrado no sistema Gestor de Contratos.</p>
     """
     enviar_email(email, "[Gestor de Contratos] Confirmação de Cadastro", html)
@@ -106,7 +107,7 @@ for i, row in contratos_df.iterrows():
         if row['Renovado'] == 'Nao':
             if st.button("Renovar", key=f"renovar_{i}"):
                 contratos_df.at[i, 'Renovado'] = 'Sim'
-                contratos_df.at[i, 'DataRenovacao'] = datetime.now().strftime("%Y-%m-%d")
+                contratos_df.at[i, 'DataRenovacao'] = datetime.now().strftime("%d/%m/%Y")
                 contratos_df.at[i, 'RenovadoPor'] = st.session_state.usuario_logado
                 salvar_contratos(contratos_df)
 
@@ -133,7 +134,7 @@ def verificar_lembretes():
     hoje = datetime.now().date()
     for _, row in df.iterrows():
         if row['Renovado'] == 'Nao':
-            data_venc = pd.to_datetime(row['DataVencimento']).date()
+            data_venc = datetime.strptime(row['DataVencimento'], "%d/%m/%Y").date()
             if (data_venc - hoje).days == 30:
                 html = f"""
                 <h3>Lembrete: Contrato prestes a vencer</h3>
@@ -157,4 +158,3 @@ st.markdown("---")
 if st.button("🔓 Sair", key="logout_btn"):
     st.session_state.usuario_logado = None
     st.rerun()
-

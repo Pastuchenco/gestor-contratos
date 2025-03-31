@@ -15,6 +15,7 @@ load_dotenv()
 EMAIL_REMETENTE = 'julianooliveira@sescms.com.br'
 SENHA_REMETENTE = os.getenv("EMAIL_SENHA")
 ARQUIVO_CSV = 'contratos.csv'
+COLUNAS_PADRAO = ['Contrato', 'DataVencimento', 'Email', 'Renovado', 'DataRenovacao', 'RenovadoPor']
 
 # Função para enviar e-mail
 def enviar_email(destinatario, assunto, conteudo_html):
@@ -57,9 +58,13 @@ st.markdown("---")
 # Função para carregar contratos
 def carregar_contratos():
     if os.path.exists(ARQUIVO_CSV):
-        return pd.read_csv(ARQUIVO_CSV)
+        df = pd.read_csv(ARQUIVO_CSV)
+        for col in COLUNAS_PADRAO:
+            if col not in df.columns:
+                df[col] = ''
+        return df[COLUNAS_PADRAO]
     else:
-        return pd.DataFrame(columns=['Contrato', 'DataVencimento', 'Email', 'Renovado', 'DataRenovacao', 'RenovadoPor'])
+        return pd.DataFrame(columns=COLUNAS_PADRAO)
 
 # Função para salvar contratos
 def salvar_contratos(df):
@@ -146,8 +151,9 @@ def agendador():
 
 threading.Thread(target=agendador, daemon=True).start()
 
-# Botão de logout (com chave única)
+# Botão de logout (apenas um botão agora)
 st.markdown("---")
 if st.button("🔓 Sair", key="logout_btn"):
     st.session_state.usuario_logado = None
     st.rerun()
+

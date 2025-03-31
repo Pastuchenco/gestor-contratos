@@ -33,7 +33,7 @@ def enviar_email(destinatario, assunto, conteudo_html):
 
 # Autenticação simples
 USUARIOS = {
-    "julianooliveira@sescms.com.br": "senha123",
+    "juliano": "senha123",
     "genilson": "senha456"
 }
 
@@ -101,9 +101,14 @@ st.subheader("📋 Lista de Contratos")
 contratos_df = carregar_contratos()
 
 for i, row in contratos_df.iterrows():
-    st.markdown(f"**{row['Contrato']}** - Vencimento: {row['DataVencimento']} - Email: {row['Email']} - Renovado: {row['Renovado']} - Data Renovação: {row['DataRenovacao']} - Renovado por: {row['RenovadoPor']}")
-    col1, col2 = st.columns([1, 1])
-    with col1:
+    col1, col2, col3, col4, col5 = st.columns([2, 2, 3, 2, 1])
+
+    col1.markdown(f"**{row['Contrato']}**")
+    col2.markdown(f"📅 **Vencimento:** {row['DataVencimento']}")
+    col3.markdown(f"📧 **Email:** {row['Email']}")
+    col4.markdown(f"🔁 **Renovado:** {row['Renovado']}<br>📅 **Data Renovação:** {row['DataRenovacao'] or '-'}<br>👤 **Por:** {row['RenovadoPor'] or '-'}", unsafe_allow_html=True)
+
+    with col5:
         if row['Renovado'] == 'Nao':
             if st.button("Renovar", key=f"renovar_{i}"):
                 contratos_df.at[i, 'Renovado'] = 'Sim'
@@ -120,14 +125,12 @@ for i, row in contratos_df.iterrows():
                 """
                 enviar_email(row['Email'], "[Gestor de Contratos] Renovação Concluída", html)
                 st.rerun()
-    with col2:
+
         if st.button("Excluir", key=f"excluir_{i}"):
             contratos_df = contratos_df.drop(index=i).reset_index(drop=True)
             salvar_contratos(contratos_df)
             st.warning("Contrato excluído.")
             st.rerun()
-
-st.dataframe(contratos_df)
 
 # Agendamento para envio de lembretes
 def verificar_lembretes():
@@ -159,3 +162,4 @@ st.markdown("---")
 if st.button("🔓 Sair", key="logout_btn"):
     st.session_state.usuario_logado = None
     st.rerun()
+

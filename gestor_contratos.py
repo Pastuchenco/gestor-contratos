@@ -87,6 +87,6 @@ for i, row in df.iterrows():
                 df.loc[i, 'Renovado'] = 'Sim'
                 df.loc[i, 'DataRenovacao'] = datetime.today().strftime('%Y-%m-%d')
                 salvar_dados(df)
-                st.experimental_rerun()
+                st.rerun()
 
 st.dataframe(df, use_container_width=True)

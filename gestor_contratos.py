@@ -30,7 +30,7 @@ if st.session_state.usuario_logado is None:
     if st.button("Entrar"):
         if usuario in USUARIOS and USUARIOS[usuario] == senha:
             st.session_state.usuario_logado = usuario
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("Usuário ou senha incorretos.")
     st.stop()
@@ -62,7 +62,7 @@ if st.button("Salvar Contrato"):
     contratos_df = pd.concat([contratos_df, novo], ignore_index=True)
     salvar_contratos(contratos_df)
     st.success("Contrato salvo com sucesso!")
-    st.experimental_rerun()
+    st.rerun()
 
 st.markdown("---")
 
@@ -80,13 +80,13 @@ for i, row in contratos_df.iterrows():
                 contratos_df.at[i, 'DataRenovacao'] = datetime.now().strftime("%Y-%m-%d")
                 contratos_df.at[i, 'RenovadoPor'] = st.session_state.usuario_logado
                 salvar_contratos(contratos_df)
-                st.experimental_rerun()
+                st.rerun()
     with col2:
         if st.button("Excluir", key=f"excluir_{i}"):
             contratos_df = contratos_df.drop(index=i).reset_index(drop=True)
             salvar_contratos(contratos_df)
             st.warning("Contrato excluído.")
-            st.experimental_rerun()
+            st.rerun()
 
 st.dataframe(contratos_df)
 
@@ -94,4 +94,4 @@ st.dataframe(contratos_df)
 st.markdown("---")
 if st.button("🔓 Sair"):
     st.session_state.usuario_logado = None
-    st.experimental_rerun()
+    st.rerun()

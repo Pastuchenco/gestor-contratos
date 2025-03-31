@@ -33,7 +33,7 @@ def enviar_email(destinatario, assunto, conteudo_html):
 
 # Autenticação simples
 USUARIOS = {
-    "juliano": "senha123",
+    "julianooliveira@sescms.com.br": "senha123",
     "genilson": "senha456"
 }
 

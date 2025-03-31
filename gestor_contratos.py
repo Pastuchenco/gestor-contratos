@@ -128,39 +128,51 @@ with st.expander("📤 Exportar Contratos"):
             with open("contratos_exportados.csv", "rb") as f:
                 st.download_button("📥 Baixar CSV", f, file_name="contratos.csv")
 
-# Tabela formatada
-st.markdown("<style>table td, table th {padding: 6px 10px; text-align: center;} .stButton button {margin: 0 4px;}</style>", unsafe_allow_html=True)
+# Corrigir formatação de data
+def formatar_data(data):
+    try:
+        return datetime.strptime(str(data), "%d/%m/%Y").strftime("%d/%m/%Y")
+    except:
+        return data
 
-# Exibir como tabela
-st.dataframe(contratos_df, hide_index=True, use_container_width=True)
+# Tabela com ações
+st.markdown("<style>div[data-testid=column] button {margin-top: 5px;}</style>", unsafe_allow_html=True)
 
-# Listagem com ações
 for i, row in contratos_df.iterrows():
-    col1, col2 = st.columns([10, 1])
+    col1, col2, col3 = st.columns([7, 1, 1])
+    with col1:
+        st.write(f"**{row['Contrato']}**")
+        st.write(row['DataVencimento'])
+        st.write(row['Email'])
+        st.write("Renovado:", row['Renovado'])
+        st.write("Data Renovação:", formatar_data(row['DataRenovacao']))
+        st.write("Renovado por:", row['RenovadoPor'])
 
-    if row['Renovado'] == 'Nao':
-        if col1.button("✅ Renovar", key=f"renovar_{i}"):
-            contratos_df.at[i, 'Renovado'] = 'Sim'
-            contratos_df.at[i, 'DataRenovacao'] = datetime.now().strftime("%d/%m/%Y")
-            contratos_df.at[i, 'RenovadoPor'] = st.session_state.usuario_logado
-            salvar_contratos(contratos_df)
+    with col2:
+        if row['Renovado'] == 'Nao':
+            if st.button("✅\nRenovar", key=f"renovar_{i}"):
+                contratos_df.at[i, 'Renovado'] = 'Sim'
+                contratos_df.at[i, 'DataRenovacao'] = datetime.now().strftime("%d/%m/%Y")
+                contratos_df.at[i, 'RenovadoPor'] = st.session_state.usuario_logado
+                salvar_contratos(contratos_df)
 
-            html = f"""
-            <h3>Contrato Renovado com Sucesso</h3>
-            <p><strong>Contrato:</strong> {row['Contrato']}</p>
-            <p><strong>Data de Vencimento:</strong> {row['DataVencimento']}</p>
-            <p><strong>Data da Renovação:</strong> {datetime.now().strftime('%d/%m/%Y')}</p>
-            <p>O contrato foi renovado no sistema Gestor de Contratos por <strong>{st.session_state.usuario_logado}</strong>.</p>
-            """
-            enviar_email(row['Email'], "[Gestor de Contratos] Renovação Concluída", html)
-            st.rerun()
+                html = f"""
+                <h3>Contrato Renovado com Sucesso</h3>
+                <p><strong>Contrato:</strong> {row['Contrato']}</p>
+                <p><strong>Data de Vencimento:</strong> {row['DataVencimento']}</p>
+                <p><strong>Data da Renovação:</strong> {datetime.now().strftime('%d/%m/%Y')}</p>
+                <p>O contrato foi renovado no sistema Gestor de Contratos por <strong>{st.session_state.usuario_logado}</strong>.</p>
+                """
+                enviar_email(row['Email'], "[Gestor de Contratos] Renovação Concluída", html)
+                st.rerun()
 
-    if st.session_state.usuario_logado == 'juliano':
-        if col2.button("🗑️ Excluir", key=f"excluir_{i}"):
-            contratos_df = contratos_df.drop(index=i).reset_index(drop=True)
-            salvar_contratos(contratos_df)
-            st.warning("Contrato excluído.")
-            st.rerun()
+    with col3:
+        if st.session_state.usuario_logado == 'juliano':
+            if st.button("🗑️\nExcluir", key=f"excluir_{i}"):
+                contratos_df = contratos_df.drop(index=i).reset_index(drop=True)
+                salvar_contratos(contratos_df)
+                st.warning("Contrato excluído.")
+                st.rerun()
 
 # Agendamento para envio de lembretes
 def verificar_lembretes():
@@ -168,15 +180,18 @@ def verificar_lembretes():
     hoje = datetime.now().date()
     for _, row in df.iterrows():
         if row['Renovado'] == 'Nao':
-            data_venc = datetime.strptime(row['DataVencimento'], "%d/%m/%Y").date()
-            if (data_venc - hoje).days == 30:
-                html = f"""
-                <h3>Lembrete: Contrato prestes a vencer</h3>
-                <p><strong>Contrato:</strong> {row['Contrato']}</p>
-                <p><strong>Data de Vencimento:</strong> {data_venc.strftime('%d/%m/%Y')}</p>
-                <p>O prazo para vencimento deste contrato está se aproximando. Por favor, avalie a renovação.</p>
-                """
-                enviar_email(row['Email'], "[Gestor de Contratos] Alerta de Vencimento", html)
+            try:
+                data_venc = datetime.strptime(row['DataVencimento'], "%d/%m/%Y").date()
+                if (data_venc - hoje).days == 30:
+                    html = f"""
+                    <h3>Lembrete: Contrato prestes a vencer</h3>
+                    <p><strong>Contrato:</strong> {row['Contrato']}</p>
+                    <p><strong>Data de Vencimento:</strong> {data_venc.strftime('%d/%m/%Y')}</p>
+                    <p>O prazo para vencimento deste contrato está se aproximando. Por favor, avalie a renovação.</p>
+                    """
+                    enviar_email(row['Email'], "[Gestor de Contratos] Alerta de Vencimento", html)
+            except:
+                pass
 
 schedule.every().day.at("06:00").do(verificar_lembretes)
 

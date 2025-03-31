@@ -100,47 +100,71 @@ st.markdown("---")
 st.subheader("📋 Lista de Contratos")
 contratos_df = carregar_contratos()
 
+# Campo de pesquisa
+with st.expander("🔍 Filtro de Busca"):
+    filtro_nome = st.text_input("Buscar por nome do contrato")
+    filtro_data = st.text_input("Buscar por data de vencimento (dd/mm/aaaa)")
+    filtro_status = st.selectbox("Status da Renovação", ["Todos", "Renovado", "Não Renovado"])
+
+    if filtro_nome:
+        contratos_df = contratos_df[contratos_df['Contrato'].str.contains(filtro_nome, case=False, na=False)]
+    if filtro_data:
+        contratos_df = contratos_df[contratos_df['DataVencimento'].str.contains(filtro_data, na=False)]
+    if filtro_status == "Renovado":
+        contratos_df = contratos_df[contratos_df['Renovado'] == 'Sim']
+    elif filtro_status == "Não Renovado":
+        contratos_df = contratos_df[contratos_df['Renovado'] == 'Nao']
+
+# Exportação
+with st.expander("📤 Exportar Contratos"):
+    formato = st.selectbox("Formato", ["Excel", "CSV"])
+    if st.button("Exportar"):
+        if formato == "Excel":
+            contratos_df.to_excel("contratos_exportados.xlsx", index=False)
+            with open("contratos_exportados.xlsx", "rb") as f:
+                st.download_button("📥 Baixar Excel", f, file_name="contratos.xlsx")
+        elif formato == "CSV":
+            contratos_df.to_csv("contratos_exportados.csv", index=False)
+            with open("contratos_exportados.csv", "rb") as f:
+                st.download_button("📥 Baixar CSV", f, file_name="contratos.csv")
+
+# Listagem
 for i, row in contratos_df.iterrows():
-    with st.container():
-        col_esq, col_dir = st.columns([5, 1])
+    col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 3, 2, 2, 1])
 
-        with col_esq:
-            st.markdown(f"""
-                <div style='line-height: 1.6; font-size: 16px;'>
-                    <b>📄 Contrato:</b> {row['Contrato']}<br>
-                    <b>📅 Vencimento:</b> {row['DataVencimento']}<br>
-                    <b>📧 Email:</b> {row['Email']}<br>
-                    <b>🔁 Renovado:</b> {row['Renovado']}<br>
-                    <b>📆 Data Renovação:</b> {row['DataRenovacao'] or '-'}<br>
-                    <b>👤 Por:</b> {row['RenovadoPor'] or '-'}
-                </div>
-            """, unsafe_allow_html=True)
+    col1.markdown(f"**📄 {row['Contrato']}**")
+    col2.markdown(f"**📅 {row['DataVencimento']}**")
+    col3.markdown(f"**📧 {row['Email']}**")
+    col4.markdown(f"**🔁 {row['Renovado']}**")
+    col5.markdown(f"**📆 {row['DataRenovacao'] or '-'}**")
+    col6.markdown(f"**👤 {row['RenovadoPor'] or '-'}**")
 
-        with col_dir:
-            if row['Renovado'] == 'Nao':
-                if st.button("✅ Renovar", key=f"renovar_{i}"):
-                    contratos_df.at[i, 'Renovado'] = 'Sim'
-                    contratos_df.at[i, 'DataRenovacao'] = datetime.now().strftime("%d/%m/%Y")
-                    contratos_df.at[i, 'RenovadoPor'] = st.session_state.usuario_logado
-                    salvar_contratos(contratos_df)
+    col_btn = st.columns([9, 1])
+    if row['Renovado'] == 'Nao':
+        if col_btn[0].button("✅ Renovar", key=f"renovar_{i}"):
+            contratos_df.at[i, 'Renovado'] = 'Sim'
+            contratos_df.at[i, 'DataRenovacao'] = datetime.now().strftime("%d/%m/%Y")
+            contratos_df.at[i, 'RenovadoPor'] = st.session_state.usuario_logado
+            salvar_contratos(contratos_df)
 
-                    html = f"""
-                    <h3>Contrato Renovado com Sucesso</h3>
-                    <p><strong>Contrato:</strong> {row['Contrato']}</p>
-                    <p><strong>Data de Vencimento:</strong> {row['DataVencimento']}</p>
-                    <p><strong>Data da Renovação:</strong> {datetime.now().strftime('%d/%m/%Y')}</p>
-                    <p>O contrato foi renovado no sistema Gestor de Contratos por <strong>{st.session_state.usuario_logado}</strong>.</p>
-                    """
-                    enviar_email(row['Email'], "[Gestor de Contratos] Renovação Concluída", html)
-                    st.rerun()
+            html = f"""
+            <h3>Contrato Renovado com Sucesso</h3>
+            <p><strong>Contrato:</strong> {row['Contrato']}</p>
+            <p><strong>Data de Vencimento:</strong> {row['DataVencimento']}</p>
+            <p><strong>Data da Renovação:</strong> {datetime.now().strftime('%d/%m/%Y')}</p>
+            <p>O contrato foi renovado no sistema Gestor de Contratos por <strong>{st.session_state.usuario_logado}</strong>.</p>
+            """
+            enviar_email(row['Email'], "[Gestor de Contratos] Renovação Concluída", html)
+            st.rerun()
 
-            if st.button("🗑️ Excluir", key=f"excluir_{i}"):
-                contratos_df = contratos_df.drop(index=i).reset_index(drop=True)
-                salvar_contratos(contratos_df)
-                st.warning("Contrato excluído.")
-                st.rerun()
+    if st.session_state.usuario_logado == 'juliano':
+        if col_btn[1].button("🗑️ Excluir", key=f"excluir_{i}"):
+            contratos_df = contratos_df.drop(index=i).reset_index(drop=True)
+            salvar_contratos(contratos_df)
+            st.warning("Contrato excluído.")
+            st.rerun()
 
-        st.markdown("---")
+    st.markdown("---")
 
 # Agendamento para envio de lembretes
 def verificar_lembretes():
@@ -167,9 +191,8 @@ def agendador():
 
 threading.Thread(target=agendador, daemon=True).start()
 
-# Botão de logout (apenas um botão agora)
+# Botão de logout
 st.markdown("---")
 if st.button("🔓 Sair", key="logout_btn"):
     st.session_state.usuario_logado = None
     st.rerun()
-

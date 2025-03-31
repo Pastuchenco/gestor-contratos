@@ -30,8 +30,9 @@ if st.session_state.usuario_logado is None:
     if st.button("Entrar"):
         if usuario in USUARIOS and USUARIOS[usuario] == senha:
             st.session_state.usuario_logado = usuario
-            st.success(f"Bem-vindo, {usuario}!")
             st.experimental_rerun()
+
+
         else:
             st.error("Usuário ou senha incorretos.")
     st.stop()

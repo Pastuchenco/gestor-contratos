@@ -130,7 +130,7 @@ with st.expander("📤 Exportar Contratos"):
 
 # Exibir contratos um por um
 for i, row in contratos_df.iterrows():
-    col1, col2 = st.columns([9, 1])
+    col1, col2 = st.columns([10, 1])
     with col1:
         st.markdown(f"""
         **Contrato:** {row['Contrato']}  
@@ -141,31 +141,32 @@ for i, row in contratos_df.iterrows():
         **Renovado por:** {row['RenovadoPor'] if pd.notna(row['RenovadoPor']) else '---'}  
         """)
     with col2:
-        if row['Renovado'] == 'Nao':
-            if st.button("✅ Renovar", key=f"renovar_{i}"):
-                contratos_df.at[i, 'Renovado'] = 'Sim'
-                contratos_df.at[i, 'DataRenovacao'] = datetime.now().strftime("%d/%m/%Y")
-                contratos_df.at[i, 'RenovadoPor'] = st.session_state.usuario_logado
-                salvar_contratos(contratos_df)
+        renovar_btn = st.button("✅ Renovar", key=f"renovar_{i}", use_container_width=True)
+        excluir_btn = st.button("🗑️ Excluir", key=f"excluir_{i}", use_container_width=True)
 
-                html = f"""
-                <h3>Contrato Renovado com Sucesso</h3>
-                <p><strong>Contrato:</strong> {row['Contrato']}</p>
-                <p><strong>Data de Vencimento:</strong> {row['DataVencimento']}</p>
-                <p><strong>Data da Renovação:</strong> {datetime.now().strftime('%d/%m/%Y')}</p>
-                <p>O contrato foi renovado no sistema Gestor de Contratos por <strong>{st.session_state.usuario_logado}</strong>.</p>
-                """
-                enviar_email(row['Email'], "[Gestor de Contratos] Renovação Concluída", html)
-                st.rerun()
+        if renovar_btn and row['Renovado'] == 'Nao':
+            contratos_df.at[i, 'Renovado'] = 'Sim'
+            contratos_df.at[i, 'DataRenovacao'] = datetime.now().strftime("%d/%m/%Y")
+            contratos_df.at[i, 'RenovadoPor'] = st.session_state.usuario_logado
+            salvar_contratos(contratos_df)
 
-        if st.session_state.usuario_logado == 'juliano':
-            if st.button("🗑️ Excluir", key=f"excluir_{i}"):
-                contratos_df = contratos_df.drop(index=i).reset_index(drop=True)
-                salvar_contratos(contratos_df)
-                st.warning("Contrato excluído.")
-                st.rerun()
+            html = f"""
+            <h3>Contrato Renovado com Sucesso</h3>
+            <p><strong>Contrato:</strong> {row['Contrato']}</p>
+            <p><strong>Data de Vencimento:</strong> {row['DataVencimento']}</p>
+            <p><strong>Data da Renovação:</strong> {datetime.now().strftime('%d/%m/%Y')}</p>
+            <p>O contrato foi renovado no sistema Gestor de Contratos por <strong>{st.session_state.usuario_logado}</strong>.</p>
+            """
+            enviar_email(row['Email'], "[Gestor de Contratos] Renovação Concluída", html)
+            st.rerun()
 
-    st.markdown("---")
+        if excluir_btn and st.session_state.usuario_logado == 'juliano':
+            contratos_df = contratos_df.drop(index=i).reset_index(drop=True)
+            salvar_contratos(contratos_df)
+            st.warning("Contrato excluído.")
+            st.rerun()
+
+    st.markdown("<hr>", unsafe_allow_html=True)
 
 # Agendamento para envio de lembretes
 def verificar_lembretes():
@@ -200,5 +201,4 @@ st.markdown("---")
 if st.button("🔓 Sair", key="logout_btn"):
     st.session_state.usuario_logado = None
     st.rerun()
-
 

@@ -6,7 +6,7 @@ from email.message import EmailMessage
 import os
 from dotenv import load_dotenv
 
-# Carrega as variáveis de ambiente (senha segura)
+# Carrega variáveis de ambiente
 load_dotenv()
 
 EMAIL_REMETENTE = 'julianooliveira@sescms.com.br'
@@ -14,79 +14,86 @@ SENHA_REMETENTE = os.getenv("EMAIL_SENHA")
 
 ARQUIVO_CSV = 'contratos.csv'
 
-# Inicializa o arquivo CSV se não existir
-if not os.path.exists(ARQUIVO_CSV):
-    df_init = pd.DataFrame(columns=['Contrato', 'DataVencimento', 'Email', 'Renovado', 'DataRenovacao'])
-    df_init.to_csv(ARQUIVO_CSV, index=False)
+# Autenticação simples
+USUARIOS = {
+    "juliano": "senha123",
+    "genilson": "senha456"
+}
 
-def carregar_dados():
-    return pd.read_csv(ARQUIVO_CSV)
+if "usuario_logado" not in st.session_state:
+    st.session_state.usuario_logado = None
 
-def salvar_dados(df):
+if st.session_state.usuario_logado is None:
+    st.title("🔐 Login - Gestor de Contratos")
+    usuario = st.text_input("Usuário")
+    senha = st.text_input("Senha", type="password")
+    if st.button("Entrar"):
+        if usuario in USUARIOS and USUARIOS[usuario] == senha:
+            st.session_state.usuario_logado = usuario
+            st.success(f"Bem-vindo, {usuario}!")
+            st.experimental_rerun()
+        else:
+            st.error("Usuário ou senha incorretos.")
+    st.stop()
+
+# Após login
+st.title("📄 Gestor de Contratos")
+st.markdown("---")
+
+# Função para carregar contratos
+def carregar_contratos():
+    if os.path.exists(ARQUIVO_CSV):
+        return pd.read_csv(ARQUIVO_CSV)
+    else:
+        return pd.DataFrame(columns=['Contrato', 'DataVencimento', 'Email', 'Renovado', 'DataRenovacao', 'RenovadoPor'])
+
+# Função para salvar contratos
+def salvar_contratos(df):
     df.to_csv(ARQUIVO_CSV, index=False)
 
-def enviar_email(destinatario, contrato):
-    msg = EmailMessage()
-    msg['Subject'] = f"Alerta de Vencimento do Contrato: {contrato}"
-    msg['From'] = EMAIL_REMETENTE
-    msg['To'] = destinatario
-    msg.set_content(f"O contrato '{contrato}' está a 30 dias ou menos de vencer. Por favor, inicie a renovação.")
+# Cadastro
+st.subheader("Cadastrar Novo Contrato")
+nome = st.text_input("Nome do Contrato")
+data_venc = st.date_input("Data de Vencimento", format="YYYY-MM-DD")
+email = st.text_input("E-mail para notificação")
 
-    try:
-        with smtplib.SMTP('smtp.office365.com', 587) as smtp:
-            smtp.starttls()
-            smtp.login(EMAIL_REMETENTE, SENHA_REMETENTE)
-            smtp.send_message(msg)
-            print(f"E-mail enviado para {destinatario} sobre o contrato '{contrato}'")
-    except Exception as e:
-        print(f"Erro ao enviar e-mail: {e}")
+if st.button("Salvar Contrato"):
+    contratos_df = carregar_contratos()
+    novo = pd.DataFrame([[nome, data_venc, email, 'Nao', None, '']], columns=contratos_df.columns)
+    contratos_df = pd.concat([contratos_df, novo], ignore_index=True)
+    salvar_contratos(contratos_df)
+    st.success("Contrato salvo com sucesso!")
+    st.experimental_rerun()
 
-def verificar_envios(df):
-    hoje = datetime.today().date()
-    for index, row in df.iterrows():
-        if row['Renovado'] == 'Nao':
-            vencimento = datetime.strptime(row['DataVencimento'], '%Y-%m-%d').date()
-            if hoje >= vencimento - timedelta(days=30):
-                enviar_email(row['Email'], row['Contrato'])
+st.markdown("---")
 
-# Streamlit UI
-st.set_page_config(page_title="Gestor de Contratos", layout="wide")
-st.title("📄 Gestor de Contratos")
-
-with st.form("form_contrato"):
-    st.subheader("Cadastrar Novo Contrato")
-    contrato = st.text_input("Nome do Contrato")
-    data_venc = st.date_input("Data de Vencimento", format="YYYY-MM-DD")
-    email = st.text_input("E-mail para notificação")
-    submitted = st.form_submit_button("Salvar Contrato")
-
-    if submitted:
-        if not contrato or not email:
-            st.warning("Preencha todos os campos obrigatórios.")
-        else:
-            df = carregar_dados()
-            novo = pd.DataFrame([[contrato, data_venc.strftime('%Y-%m-%d'), email, 'Nao', '']],
-                                columns=['Contrato', 'DataVencimento', 'Email', 'Renovado', 'DataRenovacao'])
-            df = pd.concat([df, novo], ignore_index=True)
-            salvar_dados(df)
-            st.success("Contrato salvo com sucesso!")
-
-st.divider()
+# Exibir lista
 st.subheader("📋 Lista de Contratos")
-df = carregar_dados()
-verificar_envios(df)
+contratos_df = carregar_contratos()
 
-# Exibição da lista com botão de renovação
-for i, row in df.iterrows():
-    col1, col2 = st.columns([6, 1])
+for i, row in contratos_df.iterrows():
+    st.markdown(f"**{row['Contrato']}** - Vencimento: {row['DataVencimento']} - Email: {row['Email']} - Renovado: {row['Renovado']} - Data Renovação: {row['DataRenovacao']}")
+    col1, col2 = st.columns([1, 1])
     with col1:
-        st.write(f"**{row['Contrato']}** - Vencimento: {row['DataVencimento']} - Email: {row['Email']} - Renovado: {row['Renovado']} - Data Renovação: {row['DataRenovacao']}")
-    with col2:
         if row['Renovado'] == 'Nao':
             if st.button("Renovar", key=f"renovar_{i}"):
-                df.loc[i, 'Renovado'] = 'Sim'
-                df.loc[i, 'DataRenovacao'] = datetime.today().strftime('%Y-%m-%d')
-                salvar_dados(df)
-                st.rerun()
+                contratos_df.at[i, 'Renovado'] = 'Sim'
+                contratos_df.at[i, 'DataRenovacao'] = datetime.now().strftime("%Y-%m-%d")
+                contratos_df.at[i, 'RenovadoPor'] = st.session_state.usuario_logado
+                salvar_contratos(contratos_df)
+                st.experimental_rerun()
+    with col2:
+        if st.button("Excluir", key=f"excluir_{i}"):
+            contratos_df = contratos_df.drop(index=i).reset_index(drop=True)
+            salvar_contratos(contratos_df)
+            st.warning("Contrato excluído.")
+            st.experimental_rerun()
 
-st.dataframe(df, use_container_width=True)
+st.dataframe(contratos_df)
+
+# Botão de logout
+st.markdown("---")
+if st.button("🔓 Sair"):
+    st.session_state.usuario_logado = None
+    st.experimental_rerun()
+

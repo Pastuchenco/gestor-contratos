@@ -133,24 +133,23 @@ def formatar_data(data):
     try:
         return datetime.strptime(str(data), "%d/%m/%Y").strftime("%d/%m/%Y")
     except:
-        return data
+        try:
+            return datetime.strptime(str(data), "%Y-%m-%d").strftime("%d/%m/%Y")
+        except:
+            return data
 
 # Tabela com ações
-st.markdown("<style>div[data-testid=column] button {margin-top: 5px;}</style>", unsafe_allow_html=True)
+st.markdown("<style>div[data-testid=column] button {margin-top: 5px;} .stDataFrame {width: 100% !important;}</style>", unsafe_allow_html=True)
 
+# Exibir a tabela sem os botões nela
+st.dataframe(contratos_df)
+
+# Mostrar botões fora da tabela, alinhados corretamente
 for i, row in contratos_df.iterrows():
-    col1, col2, col3 = st.columns([7, 1, 1])
+    col1, col2 = st.columns([10, 1])
     with col1:
-        st.write(f"**{row['Contrato']}**")
-        st.write(row['DataVencimento'])
-        st.write(row['Email'])
-        st.write("Renovado:", row['Renovado'])
-        st.write("Data Renovação:", formatar_data(row['DataRenovacao']))
-        st.write("Renovado por:", row['RenovadoPor'])
-
-    with col2:
         if row['Renovado'] == 'Nao':
-            if st.button("✅\nRenovar", key=f"renovar_{i}"):
+            if st.button("✅ Renovar", key=f"renovar_{i}"):
                 contratos_df.at[i, 'Renovado'] = 'Sim'
                 contratos_df.at[i, 'DataRenovacao'] = datetime.now().strftime("%d/%m/%Y")
                 contratos_df.at[i, 'RenovadoPor'] = st.session_state.usuario_logado
@@ -166,9 +165,9 @@ for i, row in contratos_df.iterrows():
                 enviar_email(row['Email'], "[Gestor de Contratos] Renovação Concluída", html)
                 st.rerun()
 
-    with col3:
+    with col2:
         if st.session_state.usuario_logado == 'juliano':
-            if st.button("🗑️\nExcluir", key=f"excluir_{i}"):
+            if st.button("🗑️ Excluir", key=f"excluir_{i}"):
                 contratos_df = contratos_df.drop(index=i).reset_index(drop=True)
                 salvar_contratos(contratos_df)
                 st.warning("Contrato excluído.")
@@ -207,3 +206,4 @@ st.markdown("---")
 if st.button("🔓 Sair", key="logout_btn"):
     st.session_state.usuario_logado = None
     st.rerun()
+

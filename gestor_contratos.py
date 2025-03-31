@@ -31,8 +31,6 @@ if st.session_state.usuario_logado is None:
         if usuario in USUARIOS and USUARIOS[usuario] == senha:
             st.session_state.usuario_logado = usuario
             st.experimental_rerun()
-
-
         else:
             st.error("Usuário ou senha incorretos.")
     st.stop()
@@ -97,4 +95,3 @@ st.markdown("---")
 if st.button("🔓 Sair"):
     st.session_state.usuario_logado = None
     st.experimental_rerun()
-

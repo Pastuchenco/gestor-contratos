@@ -128,20 +128,18 @@ with st.expander("📤 Exportar Contratos"):
             with open("contratos_exportados.csv", "rb") as f:
                 st.download_button("📥 Baixar CSV", f, file_name="contratos.csv")
 
-# Listagem
+# Tabela formatada
+st.markdown("<style>table td, table th {padding: 6px 10px; text-align: center;} .stButton button {margin: 0 4px;}</style>", unsafe_allow_html=True)
+
+# Exibir como tabela
+st.dataframe(contratos_df, hide_index=True, use_container_width=True)
+
+# Listagem com ações
 for i, row in contratos_df.iterrows():
-    col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 3, 2, 2, 1])
+    col1, col2 = st.columns([10, 1])
 
-    col1.markdown(f"**📄 {row['Contrato']}**")
-    col2.markdown(f"**📅 {row['DataVencimento']}**")
-    col3.markdown(f"**📧 {row['Email']}**")
-    col4.markdown(f"**🔁 {row['Renovado']}**")
-    col5.markdown(f"**📆 {row['DataRenovacao'] or '-'}**")
-    col6.markdown(f"**👤 {row['RenovadoPor'] or '-'}**")
-
-    col_btn = st.columns([9, 1])
     if row['Renovado'] == 'Nao':
-        if col_btn[0].button("✅ Renovar", key=f"renovar_{i}"):
+        if col1.button("✅ Renovar", key=f"renovar_{i}"):
             contratos_df.at[i, 'Renovado'] = 'Sim'
             contratos_df.at[i, 'DataRenovacao'] = datetime.now().strftime("%d/%m/%Y")
             contratos_df.at[i, 'RenovadoPor'] = st.session_state.usuario_logado
@@ -158,13 +156,11 @@ for i, row in contratos_df.iterrows():
             st.rerun()
 
     if st.session_state.usuario_logado == 'juliano':
-        if col_btn[1].button("🗑️ Excluir", key=f"excluir_{i}"):
+        if col2.button("🗑️ Excluir", key=f"excluir_{i}"):
             contratos_df = contratos_df.drop(index=i).reset_index(drop=True)
             salvar_contratos(contratos_df)
             st.warning("Contrato excluído.")
             st.rerun()
-
-    st.markdown("---")
 
 # Agendamento para envio de lembretes
 def verificar_lembretes():

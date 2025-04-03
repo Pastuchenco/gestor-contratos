@@ -1,8 +1,8 @@
 streamlit
 pandas
-python-dotenv
-schedule
 gspread
 oauth2client
+python-dotenv
+
 
 

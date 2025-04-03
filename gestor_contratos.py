@@ -2,36 +2,22 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 
-# Configuração da autenticação com o Google Sheets
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name("google-sheets-credentials.json", scope)
-client = gspread.authorize(creds)
+# Caminho do CSV local (no GitHub)
+CSV_PATH = "contratos.csv"
 
-# Nome da planilha do Google Sheets
-NOME_PLANILHA = "GestorContratos"
-ABA = "Contratos"
-
-# Conecta à planilha
-sheet = client.open(NOME_PLANILHA).worksheet(ABA)
-
-# Carrega contratos do Google Sheets
+# Função para carregar os contratos
 @st.cache_data(show_spinner=False)
 def carregar_contratos():
-    dados = sheet.get_all_records()
-    df = pd.DataFrame(dados)
-    if df.empty:
+    if os.path.exists(CSV_PATH):
+        df = pd.read_csv(CSV_PATH, dtype=str)
+    else:
         df = pd.DataFrame(columns=['Contrato', 'DataVencimento', 'Email', 'Renovado', 'DataRenovacao', 'RenovadoPor'])
     return df
 
-# Salva contratos no Google Sheets
+# Função para salvar os contratos
 def salvar_contratos(df):
-    sheet.clear()
-    sheet.append_row(['Contrato', 'DataVencimento', 'Email', 'Renovado', 'DataRenovacao', 'RenovadoPor'])
-    for _, row in df.iterrows():
-        sheet.append_row(row.fillna('').tolist())
+    df.to_csv(CSV_PATH, index=False)
 
 # Autenticação simples
 USUARIOS = {
@@ -127,5 +113,6 @@ st.markdown("---")
 if st.button("🔓 Sair", key="logout_btn"):
     st.session_state.usuario_logado = None
     st.rerun()
+
 
 
